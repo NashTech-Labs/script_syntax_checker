@@ -1,0 +1,27 @@
+default:
+  tags:
+  - <RUNNER_NAME(IF ANY)>
+  
+stages:
+  - test
+
+test:
+  stage: test
+  only:
+    refs:
+      - <BRANCH_NAME>
+
+    changes:
+      - shell_script/*
+      - python_script/*
+
+  image: python:3.6
+  script:
+    - apt-get update && apt-get install -y git
+    - export DIR_CHANGE=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA)
+    - export CHANGED_PY_INIT=$(find $DIR_CHANGE -maxdepth 1 -type f -name "*.py")
+    - for FILE in $CHANGED_PY_INIT; do python -m py_compile $FILE; done
+    - export CHANGED_SH_INIT=$(find $DIR_CHANGE -maxdepth 1 -type f -name "*.sh")
+    - apt-get update
+    - apt-get install shellcheck
+    - for FILE in $CHANGED_SH_INIT; do shellcheck $FILE; done
